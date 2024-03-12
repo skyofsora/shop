@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layouts/layout1}"
+>
+  <head>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+  </head>
+  <th:block layout:fragment="script"> </th:block>
+  <th:block layout:fragment="css"> </th:block>
+
+  <div layout:fragment="content" class="content mx-auto">
+    <div class="container mx-auto mt-4 text-center">
+      <h1>결제에 성공하셨습니다.</h1>
+      <p><span id="countdown">5</span>초 후 리다이렉트 됩니다.</p>
+      <p>If you are not redirected, <a href="/">click here</a>.</p>
+      <script>
+        var countdown = 5;
+
+        function updateCountdown() {
+          var countdownElement = document.getElementById("countdown");
+          countdownElement.innerHTML = countdown;
+
+          if (countdown === 0) {
+            window.location.href = "/"; // 목적지 URL로 변경
+          } else {
+            countdown--;
+            setTimeout(updateCountdown, 1000); // 1초마다 업데이트
+          }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+          setTimeout(updateCountdown, 1000); // 페이지 로딩 후 1초 뒤에 시작
+        });
+      </script>
+    </div>
+  </div>
+</html>

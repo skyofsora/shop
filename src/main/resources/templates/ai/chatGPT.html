@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layouts/layout1}"
+>
+  <!--사용자 css 추가-->
+  <th:block layout:fragment="css">
+    <style>
+      @font-face {
+        font-family: "appleFont";
+        src: url("/fonts/AppleSDGothicNeoR.ttf") format("truetype");
+      }
+      pre {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        font-family: "appleFont", sans-serif;
+        font-size: large;
+      }
+      #content::-webkit-scrollbar {
+        width: 10px;
+      }
+      #content::-webkit-scrollbar-thumb {
+        background-color: #2f3542;
+        border-radius: 10px;
+        background-clip: padding-box;
+        border: 2px solid transparent;
+      }
+      #content::-webkit-scrollbar-track {
+        background-color: none;
+      }
+    </style>
+  </th:block>
+  <!-- 사용자 스크립트 추가-->
+  <th:block layout:fragment="script">
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/go.min.js"
+    ></script>
+    <script th:inline="javascript">
+      const isEmpty = (input) => {
+        if (
+          typeof input === "undefined" ||
+          input === null ||
+          input === "" ||
+          input === "null" ||
+          input.length === 0 ||
+          (typeof input === "object" && !Object.keys(input).length)
+        ) {
+          return true;
+        } else return false;
+      };
+      var check = false;
+      function sendChat() {
+        if (check) return;
+        check = true;
+        loadingOn();
+        let chat = $("#chat").val();
+        if (isEmpty(chat)) return;
+        $("#content").append(
+          "<pre class='chats' data-role='user'>" + chat + "</pre>"
+        );
+        $("#chat").val("");
+        let contents = $("#content");
+        contents.scrollTop(contents.prop("scrollHeight"));
+        let chats = document.querySelectorAll(".chats");
+        let resultArray = Array.from(chats).map(function (chats) {
+          return {
+            role: chats.getAttribute("data-role"),
+            content: chats.textContent.trim(),
+          };
+        });
+        console.log(resultArray);
+        $.ajax({
+          url: "/api/ai",
+          type: "POST",
+          data: JSON.stringify(resultArray),
+          dataType: "json",
+          contentType: "application/json; charset=utf-8",
+          cache: false,
+          success: function (data) {
+            console.log(data);
+            let gptChat = data["choices"][0]["message"]["content"];
+            // ```javascript 같은 응답을 정규식을 통해 <code>로 변환
+            let temp = gptChat.replace(
+              /```([a-zA-Z]+)\n/g,
+              '<code class="language-$1">'
+            );
+            let result = temp.replace(/```/g, "</code>");
+            $("#content").append(
+              "<pre class='chats' data-role='assistant'>" + result + "</pre>"
+            );
+            hljs.highlightAll();
+            contents.scrollTop(contents.prop("scrollHeight"));
+            loadingOff();
+            check = false;
+          },
+          error: function (jqXHR, status, error) {
+            alert(jqXHR.responseText);
+            loadingOff();
+            check = false;
+          },
+        });
+      }
+
+      $(function () {
+        $("textarea").on("keydown", function (event) {
+          if (event.keyCode == 13)
+            if (!event.shiftKey) {
+              event.preventDefault();
+              $("#sendChat").submit();
+            }
+        });
+
+        $("#chatForm").on("submit", function () {
+          sendChat();
+        });
+      });
+
+      function loadingOn() {
+        $("#sendChat").prop("disabled", true);
+        $("#sendChat").append(
+          '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>'
+        );
+      }
+
+      function loadingOff() {
+        $("#sendChat").prop("disabled", false);
+        $("#sendChat").text("전송");
+      }
+    </script>
+  </th:block>
+
+  <div layout:fragment="content">
+    <div class="container mx-auto mt-4">
+      <form id="chatForm">
+        <div id="content" class="overflow-y-auto" style="height: 75vh"></div>
+        <div id="input" class="input-group">
+          <textarea
+            class="form-control"
+            name="chat"
+            id="chat"
+            style="height: auto"
+          ></textarea>
+          <button
+            class="btn btn-dark text-right"
+            id="sendChat"
+            onclick="sendChat()"
+          >
+            전송
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</html>

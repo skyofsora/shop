@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layouts/layout1}"
+>
+  <head>
+    <meta name="_csrf" th:content="${_csrf.token}" />
+    <meta name="_csrf_header" th:content="${_csrf.headerName}" />
+  </head>
+  <th:block layout:fragment="script">
+    <script th:inline="javascript">
+      $(document).ready(function () {
+        $("#glowing").hide();
+      });
+
+      function cancelOrder(orderId) {
+        const token = $("meta[name='_csrf']").attr("content");
+        const header = $("meta[name='_csrf_header']").attr("content");
+        var url = "/order/" + orderId + "/cancel";
+        var paramData = {
+          orderId: orderId,
+        };
+
+        var param = JSON.stringify(paramData);
+
+        $.ajax({
+          url: url,
+          type: "POST",
+          contentType: "application/json",
+          data: param,
+          beforeSend: function (xhr) {
+            xhr.setRequestHeader(header, token);
+          },
+          dataType: "json",
+          cache: false,
+          success: function (result, status) {
+            alert("주문이 취소 되었습니다.");
+            location.href = location.href;
+          },
+          error: function (jqXHR, status, error) {
+            if (jqXHR.status == "401") {
+              alert("로그인 후 이용해주세요.");
+              location.href = "/members/login";
+            } else {
+              alert(jqXHR.responseText);
+            }
+          },
+        });
+      }
+
+      function sendData() {
+        loadingOn();
+        let gpt = [
+          {
+            role: "system",
+            content:
+              "You are an advisor. You need to provide feedback and reviews in Korean within 3-5 lines based on data.",
+          },
+          {
+            role: "user",
+            content: $("#orderhist").html(),
+          },
+        ];
+        $.ajax({
+          url: "/api/ai",
+          type: "POST",
+          data: JSON.stringify(gpt),
+          dataType: "json",
+          contentType: "application/json; charset=utf-8",
+          success: function (data) {
+            loadingOff();
+            console.log(data);
+            let gptChat = data["choices"][0]["message"]["content"];
+            $("#content").append(
+              "<pre class='chats' data-role='assistant'>" + gptChat + "</pre>"
+            );
+          },
+          error: function (jqXHR, status, error) {
+            alert(jqXHR.responseText);
+          },
+        });
+      }
+
+      function loadingOn() {
+        $("#content").html("");
+        $("#AIgen").prop("disabled", true);
+        $("#AIgen").text("");
+        $("#AIgen").append(
+          '<span class="spinner-border spinner-border-sm" aria-hidden="true"></span>'
+        );
+        $("#glowing").show();
+      }
+
+      function loadingOff() {
+        $("#AIgen").prop("disabled", false);
+        $("#AIgen").text("AI");
+        $("#glowing").hide();
+      }
+
+      function purchase(orderId) {
+        const token = $("meta[name='_csrf']").attr("content");
+        const header = $("meta[name='_csrf_header']").attr("content");
+        $.ajax({
+          url: "/kakaopay/purchase/" + orderId,
+          type: "GET",
+          beforeSend: function (xhr) {
+            xhr.setRequestHeader(header, token);
+          },
+          dataType: "json",
+          success: function (result, status) {
+            console.log(result);
+            openPage(result);
+          },
+          error: function (jqXHR, status, error) {
+            if (jqXHR.status == "401") {
+              alert("로그인 후 이용해주세요.");
+              location.href = "/members/login";
+            } else {
+              console.log(error);
+              console.log(jqXHR.responseText);
+              console.log(status);
+            }
+          },
+        });
+      }
+
+      function openPage(result) {
+        var windowWidth =
+          window.innerWidth ||
+          document.documentElement.clientWidth ||
+          document.body.clientWidth;
+        if (windowWidth > 575) {
+          location.href = result.next_redirect_pc_url;
+        } else {
+          location.href = result.next_redirect_mobile_url;
+        }
+      }
+    </script>
+  </th:block>
+  <th:block layout:fragment="css">
+    <style>
+      @font-face {
+        font-family: "appleFont";
+        src: url("/fonts/AppleSDGothicNeoR.ttf") format("truetype");
+      }
+
+      pre {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        white-space: pre-wrap;
+        font-family: "appleFont", sans-serif;
+        font-size: large;
+      }
+
+      .content-mg {
+        margin-left: 15%;
+        margin-right: 15%;
+        margin-top: 2%;
+        margin-bottom: 100px;
+      }
+
+      .repImgDiv {
+        margin-right: 15px;
+        margin-left: 15px;
+        height: auto;
+      }
+
+      .repImg {
+        height: 100px;
+        width: 100px;
+      }
+
+      .card {
+        max-width: 750px;
+        height: 100%;
+        padding: 30px;
+        margin-bottom: 20px;
+      }
+
+      .fs18 {
+        font-size: 18px;
+      }
+
+      .fs24 {
+        font-size: 24px;
+      }
+      .content {
+        max-width: 800px;
+      }
+    </style>
+  </th:block>
+
+  <div layout:fragment="content" class="content mx-auto">
+    <h2 class="my-4">구매 이력</h2>
+    <p class="placeholder-glow" id="glowing">
+      <span class="placeholder col-7"></span>
+      <span class="placeholder col-4"></span>
+      <span class="placeholder col-4"></span>
+      <span class="placeholder col-6"></span>
+      <span class="placeholder col-8"></span>
+    </p>
+    <div id="content"></div>
+    <button onclick="sendData()" id="AIgen" class="btn btn-dark">AI</button>
+    <div id="orderhist">
+      <div th:each="order : ${orders.getContent()}">
+        <div class="d-flex mb-3 align-self-center">
+          <div>
+            <h4 th:text="${order.orderDate} + ' 주문'"></h4>
+          </div>
+          <div class="ms-3">
+            <th:block
+              th:if="${order.orderStatus == T(com.shop.constant.OrderStatus).ORDER}"
+            >
+              <button
+                class="btn btn-outline-secondary text-end"
+                th:value="${order.orderId}"
+                onclick="cancelOrder(this.value)"
+              >
+                주문취소
+              </button>
+            </th:block>
+            <th:block
+              th:if="${order.orderStatus == T(com.shop.constant.OrderStatus).CANCEL}"
+            >
+              <h4>(취소 완료)</h4>
+            </th:block>
+            <th:block
+              th:if="${order.orderStatus == T(com.shop.constant.OrderStatus).WAIT_PAYMENT}"
+              ><h4 class="d-inline">(결제 대기)</h4>
+              <button
+                class="btn btn-outline-secondary text-end"
+                th:value="${order.orderId}"
+                onclick="purchase(this.value)"
+              >
+                결제하기
+              </button>
+            </th:block>
+          </div>
+        </div>
+
+        <div class="card d-flex">
+          <div
+            class="d-flex mb-3"
+            th:each="orderItem : ${order.orderItemDtoList}"
+          >
+            <div class="repImgDiv">
+              <img
+                th:src="${orderItem.imgUrl}"
+                th:alt="${orderItem.itemNm}"
+                class="rounded repImg"
+              />
+            </div>
+            <div class="align-self-center w-75">
+              <span
+                th:text="${orderItem.itemNm}"
+                class="fs24 font-weight-bold"
+              ></span>
+              <div class="fs18 font-weight-light">
+                <span th:text="${orderItem.orderPrice} + '원'"></span>
+                <span th:text="${orderItem.count} + '개'"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        th:with="start=${(orders.number/maxPage)*maxPage + 1},
+        end=(${(orders.totalPages == 0) ? 1 : (start + (maxPage-1) < orders.totalPages ? start + (maxPage - 1) : orders.totalPages)})"
+      >
+        <ul class="pagination pagination-bg-dark justify-content-center">
+          <li class="page-item" th:classappend="${orders.first}?'disabled'">
+            <a
+              th:href="@{'/orders/'+ ${orders.number - 1}}"
+              aria-label="Previous"
+              class="page-link"
+            >
+              <span aria-hidden="true">Prev</span>
+            </a>
+          </li>
+          <li
+            class="page-item"
+            th:each="page: ${#numbers.sequence(start , end)}"
+            th:classappend="${orders.number eq page- 1}? 'active' :''"
+          >
+            <a
+              th:href="@{'/orders/'+ ${page - 1}}"
+              th:inline="text"
+              class="page-link"
+              >[[${ page }]]</a
+            >
+          </li>
+          <li class="page-item" th:classappend="${orders.last}?'disabled'">
+            <a
+              th:href="@{'/orders/'+ ${orders.number + 1}}"
+              aria-label="Previous"
+              class="page-link"
+            >
+              <span aria-hidden="true">Next</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</html>
