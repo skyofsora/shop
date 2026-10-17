@@ -80,6 +80,6 @@ public class OrderService {
         }
         Order order = Order.createOrder(member, orderItemList);
         orderRepository.save(order);
-        return kakaoPaymentService.purchase(orderRepository.findByOrderTid(order.getOrderTid()), member);
+        return kakaoPaymentService.purchase(order, member);
     }
 }
