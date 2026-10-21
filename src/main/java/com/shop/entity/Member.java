@@ -35,7 +35,7 @@ public class Member extends BaseEntity {
         this.name = name;
         this.email = email;
         this.picture = picture;
-        role = Role.ADMIN;
+        role = Role.USER;
     }
 
     public Member() {
@@ -50,7 +50,7 @@ public class Member extends BaseEntity {
         String password = passwordEncoder.encode(memberFormDto.getPassword());
         member.setPassword(password);
         member.setTelNumber(memberFormDto.getTelNumber());
-        member.setRole(Role.ADMIN);
+        member.setRole(Role.USER);
         member.setProvider("normal");
         return member;
     }
