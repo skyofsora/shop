@@ -160,7 +160,7 @@
 
         <li
           class="page-item"
-          th:classappend="${items.number + 1 eq items.totalPages}?'disabled':''"
+          th:classappend="${items.last}?'disabled':''"
         >
           <a
             th:href="@{'/' +'?searchQuery=' + ${itemSearchDto.searchQuery} + '&page=' + ${items.number+1}}"
