@@ -34,8 +34,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-                        .requestMatchers("/", "/aboutus", "/members/**", "/mail/**", "/item/**", "/favicon.ico", "/resources/**", "/error").permitAll()
-                        .requestMatchers("/order/**", "/orders/**", "/cart/**", "/cartItem/**", "/api/**", "/ai/**", "/kakao/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/", "/aboutus", "/members/**", "/mail/**", "/item/**", "/favicon.ico", "/resources/**", "/error", "/actuator/health").permitAll()                        .requestMatchers("/order/**", "/orders/**", "/cart/**", "/cartItem/**", "/api/**", "/ai/**", "/kakao/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/admin/**", "/admin/item/new").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
