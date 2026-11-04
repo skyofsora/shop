@@ -1,0 +1,21 @@
+[Unit]
+Description=Shop Spring Boot application
+After=network.target mariadb.service
+
+[Service]
+Type=simple
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/opt/shop
+
+Environment="SPRING_PROFILES_ACTIVE=ec2"
+EnvironmentFile=/etc/shop/shop.env
+
+ExecStart=/usr/bin/java -jar /opt/shop/shop.jar
+
+SuccessExitStatus=143
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
