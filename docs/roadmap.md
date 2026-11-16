@@ -19,12 +19,12 @@
 - Maven Wrapper와 Java 21 환경을 복구했고, JAR 실행, 8080 포트 확인, 로그 확인, 정상 종료를 검증했다.
 - `application-ec2.properties`를 추가해 DB, 메일, OAuth, 업로드 경로를 환경변수로 분리했다. 실제 비밀값은 저장소에 넣지 않는다.
 - Actuator health endpoint를 추가하고 `/actuator/health`가 EC2 profile에서 HTTP 200과 `UP`을 반환하는 것을 확인했다. 상세 상태는 외부에 노출하지 않는다.
-- AWS Free Plan 계정, IAM 사용자 MFA, AWS CLI profile을 준비했다. 아직 EC2, RDS, S3 등 과금 가능 리소스는 생성하지 않았다.
+- AWS Free Plan 계정, IAM 사용자 MFA를 준비했고, Tokyo 리전에 Amazon Linux 2023 기반 EC2 한 대를 수동 배포했다. Session Manager, systemd, Nginx, MariaDB와 외부 health check까지 검증한 상세 기록은 [EC2 수동 배포 기록](deployments/2026-11-16-ec2-manual-deployment.md)에 남긴다.
 
 ### 남은 핵심 과제
 
-- 첫 Linux/EC2 수동 배포와 종료·삭제 절차 검증
-- Nginx, systemd, 로그 및 장애 대응 근거 만들기
+- 인스턴스 중지·시작 시 public IP 변경, EBS 유지, 종료·삭제 절차 검증
+- Nginx, systemd, 로그 및 장애 대응 근거 보강
 - Docker, GitHub Actions, Terraform, CloudWatch를 순차적으로 적용
 - 일본어 이력서·職務経歴書·GitHub 프로젝트 설명을 정리하고 지원을 병행
 
@@ -153,6 +153,14 @@
 3. 기준선 정리가 끝나면 Linux·network 복습과 저비용 AWS 수동 배포로 넘어간다.
 
 ## 진행 기록
+
+### 2026-11-16 — 첫 EC2 수동 배포
+
+- Tokyo 리전에 Amazon Linux 2023 x86_64, `t3.micro`, 암호화된 8 GiB gp3 EBS로 단일 EC2를 만들었다.
+- Session Manager용 IAM 역할, IMDSv2 필수, SSH 미개방, 작업자 IP에만 제한한 HTTP 80 보안 그룹을 적용했다.
+- Java 21, MariaDB, Nginx, Git을 설치하고, GitHub source clone → Maven Wrapper build → systemd service → Nginx reverse proxy 순서로 배포했다.
+- DB, disk, mail을 포함한 health endpoint가 내부 8080·Nginx 80·Mac 외부 요청에서 모두 HTTP 200 / `UP`인 것을 확인했다.
+- 상세 선택 이유, 검증 결과, 한계는 [EC2 수동 배포 기록](deployments/2026-11-16-ec2-manual-deployment.md)에 정리했다.
 
 ### 2026-10-25
 
