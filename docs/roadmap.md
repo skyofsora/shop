@@ -162,6 +162,11 @@
 - DB, disk, mail을 포함한 health endpoint가 내부 8080·Nginx 80·Mac 외부 요청에서 모두 HTTP 200 / `UP`인 것을 확인했다.
 - 상세 선택 이유, 검증 결과, 한계는 [EC2 수동 배포 기록](deployments/2026-11-16-ec2-manual-deployment.md)에 정리했다.
 
+### 2026-11-17 — 중지 후 자동 복구 검증
+
+- EC2를 중지했다가 시작한 뒤 MariaDB, `shop.service`, Nginx가 모두 자동 기동된 것을 확인했다.
+- 새 public IP와 현재 작업자 IP `/32`로 갱신한 HTTP 80 보안 그룹 규칙에서 외부 health가 다시 HTTP 200 / `UP`을 반환했다.
+
 ### 2026-10-25
 
 - troubleshooting 문서 2개를 정리하고 `9603e6e`로 커밋·푸시했다.

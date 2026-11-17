@@ -50,8 +50,11 @@
 | 내부 health | `http://127.0.0.1:8080/actuator/health` → HTTP 200 / `UP` |
 | Nginx proxy | `http://127.0.0.1/actuator/health` → HTTP 200 / `UP` |
 | 외부 health | 작업자 IP에서 Nginx 80 경유 HTTP 200 / `UP` |
+| 중지 후 복구 | EC2 시작 후 MariaDB·shop·Nginx가 모두 `enabled` / `active`, 새 public IP에서 외부 health HTTP 200 / `UP` |
 
 메일 health가 처음 `DOWN`이었고, 원인은 Google 앱 비밀번호의 공백 포함 입력이었다. 공백 없는 앱 비밀번호로 환경변수를 갱신한 뒤 DB, disk, mail health가 모두 `UP`인 것을 확인했다. 진단 중에만 health 세부 정보를 로컬에서 확인했고, 완료 후에는 다시 숨겼다.
+
+2026-11-17에는 인스턴스를 중지한 뒤 다시 시작해 자동 복구를 검증했다. `mariadb`, `shop`, `nginx`가 모두 `enabled`와 `active` 상태였고, 새 public IPv4와 변경된 작업자 IP `/32` 보안 그룹 규칙에서 외부 health가 다시 HTTP 200 / `UP`을 반환했다.
 
 ## 남은 한계와 다음 작업
 
